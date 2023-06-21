@@ -29,3 +29,4 @@ pip install -r requirements.txt
 
 3.Run "main.py", after which a strategy report in HTML format can be generated.
 
+![Example Image](https://github.com/chrisphoenixsoar/etf_rotation/blob/master/demo.png)
