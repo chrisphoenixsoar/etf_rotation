@@ -5,22 +5,24 @@ from function import *
 def rotation_strategy(df, params, **kwargs):
     """
     轮动策略,
-    :param df: 数据
+    :param df: 轮动池中所有标的的因子值
     :param params:
     :return:
     """
-    n = params[0]  # zhangdiefu para
+    
+    n = params[0]  
     time_col = kwargs['time_col']
-    # 1、轮动指标是涨跌幅20
+    
     compare_column_list = [x for x in df.columns if f'Zhangdiefu_bh_{n}' in x]
-    # style 表示轮动到了
+    #选出值最大那一列的名称
     df["style"] = df[compare_column_list].apply(max_style, args=(compare_column_list,), axis=1)
     df['style'] = df['style'].str.split('_').str[0]   
     df['style'].fillna(method='ffill', inplace=True)
     df = df[df[time_col] >= pd.to_datetime(kwargs['start_date'])]
-    # 对轮动标的进行交易条件判断
+    
+    # 选出序列中的最大值，对标的进行轮动的判断
     df[f'style_Zhangdiefu_bh_{n}'] = df[compare_column_list].apply(max_value, axis=1)
-    df.loc[df[f'style_Zhangdiefu_bh_{20}'] < 0.01, 'style'] = 'cash'
+    df.loc[df[f'style_Zhangdiefu_bh_{20}'] < 0.005, 'style'] = 'cash'           #期间涨幅小于0.5%则持有现金
     return df
 
 def batch_parameters():

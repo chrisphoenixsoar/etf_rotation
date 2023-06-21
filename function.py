@@ -1,20 +1,14 @@
-'''
-
-author:phoenix
-
-'''
-
 import os
 import pandas as pd
 import numpy as np
 from multiprocessing import Pool, cpu_count
 from functools import reduce
 
-# stock 类专用：=====================
+
 
 def adjusted_day(df, model='qfq'):
     '''
-    对数据进行复权操作
+    复权
     model:qfq-前复权，hfq-后复权
     '''
     # 计算复权涨跌幅
@@ -59,22 +53,22 @@ def read_index_and_cal_factor(benchmark, path, rotation_list, usecols,
     # symbol_list = list(set(rotation_list + list(indi_config_dict.keys())))
     # print(set(rotation_list))
     symbol_list = rotation_list
-    for index in symbol_list:
+    for index in symbol_list:                    #逐个读入etf行情数据
         # print(index)               
         df = pd.read_csv(path + f'/{index}.csv',  parse_dates=["date"])       
         symbol = index
         # 将K线数据和基准数据合并，填充没有交易的数据
         df['symbol'] = df['code']
-        df.drop_duplicates(subset=['date'], inplace=True)  # 2.1版新增
+        df.drop_duplicates(subset=['date'], inplace=True)   
         df.sort_values(by='date', inplace=True)
-        df = adjusted_day(df)
+        df = adjusted_day(df)                              #复权
         df['pre_close'] = df['close'].shift()
         df = merge_with_benchmark(df, benchmark, time_col='date')
         df['pre_close'].fillna(method='ffill', inplace=True)
         df.reset_index(inplace=True, drop=True)
 
         # 开始计算因子
-        factor_list = []  # 用于记录因子列
+        factor_list = []  # 用于记录因子的列名
         if symbol in rotation_list:
             for factor_config in factor_config_list:
                 factor = factor_config['factor']
@@ -83,6 +77,7 @@ def read_index_and_cal_factor(benchmark, path, rotation_list, usecols,
                 for n in factor_config['params_list']:
                     df = getattr(cls, 'signal')(df, n)
             df['pct'] = df['close'].pct_change(1)
+            
         # 判断是否计算辅助因子
         for k in indi_config_dict.keys():
             if symbol == k:
@@ -108,9 +103,11 @@ def read_index_and_cal_factor(benchmark, path, rotation_list, usecols,
             rename_dict[col] = symbol + '_' + col
         df.rename(columns=rename_dict, inplace=True)
         # print(df.tail(2))
-        all_df_list.append(df)
+        all_df_list.append(df)       
+        # print(all_df_list[0].head(10))
+    
     all_df = reduce(lambda left, right: pd.merge(left, right, on='date', how='outer'), all_df_list)
-    # 删除动量为空
+    # 删除因子为空的记录
     # all_factor_cols = list(filter(lambda x:any([y in x for y in factor_list]), df.columns))
     # all_df.dropna(subset=all_factor_cols, how="all", inplace=True)
     all_factor_cols=list(all_df.columns) 
@@ -128,7 +125,7 @@ def merge_with_benchmark(df, benchmark, time_col='candle_begin_time'):
     """
 
     # end = df[time_col].max()  # k线结束时间
-    # ===将现货数据和benchmark数据合并，并且排序
+    # ===将benchmark数据合并，并且排序
     df = pd.merge(left=df, right=benchmark, on='date', how='right', sort=True, indicator=True)
 
     # ===对开、高、收、低、前收盘价价格进行补全处理
@@ -173,7 +170,9 @@ def appendmax(sr):
     return sr
 
 def max_style(x, index_list):
-    """ 选出值最大的那一列的列名 """
+    """ 
+    选出值最大的那一列的列名 
+    """
     x = np.array(x)
     # 下面这个加了个条件：最大值为正
     # if len(x[x > 0]) == 0:
@@ -186,7 +185,9 @@ def max_style(x, index_list):
         return 'cash'
 
 def max_value(x):
-    '''选出序列中的最大值'''
+    '''
+    选出序列中的最大值
+    '''
     x = np.array(x)
     if any(~np.isnan(np.sort(x))):
         return x[np.argsort(x)[~np.isnan(np.sort(x))][-1]]

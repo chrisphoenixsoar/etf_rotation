@@ -19,6 +19,10 @@ factor_config_list = [
         'factor': 'Zhangdiefu',
         'params_list': [20]
     },
+    {
+        'factor': 'Gap',
+        'params_list': [20]
+    },
 
 ]
 
@@ -34,7 +38,8 @@ strategy_config = {
 # 回测时间
 start_time = '2010-01-01'
 end_time = '2023-06-08'
+
 # 手续费
-rade_rate = 1.2 / 10000  
+trade_rate = 1.2 / 10000  
 
 usecols= ['date','close','pct',  'open']      

@@ -1,5 +1,3 @@
-
-
 def signal(df, *args):
     """
      
